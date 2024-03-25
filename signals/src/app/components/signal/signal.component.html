@@ -1,0 +1,16 @@
+<h3>{{ numA() }}</h3>
+<button (click)="add()">Click</button>
+
+<p>computed test</p>
+<p>{{ firstName() }} {{ lastName() }}</p>
+<h3>{{ name() }}</h3>
+<button (click)="updateName()">Click</button>
+
+<h1>Array Signal</h1>
+
+<ul>
+  @for (item of array(); track $index) {
+  <li>{{ item }}</li>
+  }
+</ul>
+<button (click)="updateArray()">Click</button>
