@@ -1,14 +1,26 @@
 import { Injectable, WritableSignal, signal } from '@angular/core';
 import { environment } from '../../environments/environment.development';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+
+interface Tasks {
+  id: string,
+  title: string
+}
 
 @Injectable({
   providedIn: 'root',
 })
+
 export class ApiService {
-  apiURL: string = environment.API_URL;
+  #apiURL: WritableSignal<string> = signal(environment.API_URL);
   public name: WritableSignal<string> = signal('Lucas Dantas');
   public name$ = new BehaviorSubject('Lucas Dantas $');
 
-  constructor() {}
+  constructor(private _http: HttpClient) {
+  }
+
+  public httpListTask$(): Observable<Tasks[]> {
+    return this._http.get<Tasks[]>(this.#apiURL())
+  }
 }

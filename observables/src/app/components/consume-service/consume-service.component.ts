@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../service/api.service';
 
 @Component({
@@ -9,13 +9,18 @@ import { ApiService } from '../../service/api.service';
   styleUrl: './consume-service.component.scss',
 })
 export class ConsumeServiceComponent implements OnInit {
+  public getTask = signal<null | Array<{ id: string; title: string }>>(null);
+
   constructor(private _apiService: ApiService) {}
 
   ngOnInit(): void {
-    console.log(this._apiService.name());
-
-    this._apiService.name$.subscribe({
-      next: (value) => console.log(value),
+    this._apiService.httpListTask$().subscribe({
+      next: (next) => {
+        console.log(next);
+        this.getTask.set(next);
+      },
+      error: (error) => console.log(error),
+      complete: () => console.log('complete!'),
     });
 
     setTimeout(() => {

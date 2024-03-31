@@ -12,8 +12,6 @@ Os arquivos em Angular possuem responsabilidades bem definidas. É uma boa prát
 
 ```
 ng generate service
-Ou
-ng g s
 ```
 
 ## Tipos de Injetores
@@ -113,13 +111,13 @@ _será observado toda vez que o BehaviorSubject sofrer alguma alteração._
 
 ```ts
 this.apiService.name$.subscribe({
-  next: (value) => console.log(value), 
+  next: (value) => console.log(value),
 });
 
 this.apiService.name$.next("Outro nome");
 ```
 
-*Todos os componentes inscritos em name$, tera o valor alterado para 'Outro nome' (nesse exemplo)*
+_Todos os componentes inscritos em name$, tera o valor alterado para 'Outro nome' (nesse exemplo)_
 
 <hr>
 
@@ -145,4 +143,110 @@ ngOnInit(): void {
 }
 ```
 
-*Funciona de maneira similar ao BehaviorSubject*
+_Funciona de maneira similar ao BehaviorSubject_
+
+## HTTP
+
+Utilização do http no angular
+
+- Importação do provideHttpClient e criação no app.config.ts
+
+```ts
+import { provideHttpClient } from "@angular/common/http";
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideRouter(routes), provideHttpClient()],
+};
+```
+
+- Injetando no service, no construtor (Comum)
+
+```ts
+import { HttpClient } from "@angular/common/http";
+
+@Injectable({
+  providedIn: "root",
+})
+export class ApiService {
+  constructor(private _http: HttpClient) {}
+}
+```
+
+- Ou injetando no service com signal (Novo)
+
+```ts
+import { Injectable, inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+
+@Injectable({
+  providedIn: "root",
+})
+export class ApiService {
+  #http = inject(HttpClient);
+}
+```
+
+Realizando a chamada http no Service
+Em api.service.ts
+
+- tipando o Observable com interface
+- realizando chamada get
+- utilizando o Observable
+- _o $ no nome da função significa que é um observable_
+
+```ts
+interface Tasks {
+  id: string,
+  title: string
+}
+
+export class ApiService {
+  #apiURL: WritableSignal<string> = signal(environment.API_URL);
+  public name: WritableSignal<string> = signal('Lucas Dantas');
+  public name$ = new BehaviorSubject('Lucas Dantas $');
+
+  constructor(private _http: HttpClient) {
+  }
+
+  public httpListTask$(): Observable<Tasks[]> {
+    return this._http.get<Tasks[]>(this.#apiURL())
+  }
+```
+
+## Requisições com subscribe
+
+Realizando a requisição no componente com subscribe
+
+```ts
+ngOnInit(): void{
+  this._apiService.httpListTask$().subscribe({
+    next: (next) => console.log(next),
+      error: (error) => console.log(error),
+      complete: () => console.log("complete!")
+    });
+}
+```
+
+next = São os dados da requisição caso seja bem sucedida.
+
+error = Em caso de erro, exibirá o erro ocorrido da requisição.
+
+complete = Se a requisição for bem sucedida, utiliza-lo para informar que a requisição foi bem sucedida
+
+
+- Salvando os dados em getTask (signal)
+
+```ts
+  public getTask = signal<null | Array<{ id: string; title: string }>>(null);
+
+  ngOnInit(): void {
+    this._apiService.httpListTask$().subscribe({
+      next: (next) => {
+        console.log(next);
+        this.getTask.set(next);
+      },
+      error: (error) => console.log(error),
+      complete: () => console.log('complete!'),
+    });
+}
+```
