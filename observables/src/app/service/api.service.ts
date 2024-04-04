@@ -1,6 +1,6 @@
 import { Injectable, WritableSignal, signal } from '@angular/core';
 import { environment } from '../../environments/environment.development';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, shareReplay } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 interface Tasks {
@@ -21,6 +21,8 @@ export class ApiService {
   }
 
   public httpListTask$(): Observable<Tasks[]> {
-    return this._http.get<Tasks[]>(this.#apiURL())
+    return this._http.get<Tasks[]>(this.#apiURL()).pipe(
+      shareReplay()
+    )
   }
 }

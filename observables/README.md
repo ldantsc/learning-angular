@@ -233,7 +233,6 @@ error = Em caso de erro, exibirá o erro ocorrido da requisição.
 
 complete = Se a requisição for bem sucedida, utiliza-lo para informar que a requisição foi bem sucedida
 
-
 - Salvando os dados em getTask (signal)
 
 ```ts
@@ -250,3 +249,88 @@ complete = Se a requisição for bem sucedida, utiliza-lo para informar que a re
     });
 }
 ```
+
+## Requisições com Async
+
+Utilizando o pipe async
+
+- Pra utilizar precisa importar o CommonModule ou AsyncPipe do @angular/common
+
+```ts
+
+@Component({
+  selector: 'app-consume-service',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './consume-service.component.html',
+  styleUrl: './consume-service.component.scss',
+})
+export class ConsumeServiceComponent implements OnInit {
+  public getTask$ = this._apiService.httpListTask$()
+  ...
+}
+
+```
+
+No documento html:
+
+- async carrega o Observable
+- o pipe json renderiza os dados objects
+
+```html
+{{ getTask$ | async | json}}
+```
+
+O problema no momento é o multicast a partir desta etapa, e se fizer multiplas requisições, ele realiza varias requisições também gerando problemas de performance como por exemplo realizando 4 requisições do mesmo Observable:
+
+```html
+{{ getTask$ | async | json}} {{ getTask$ | async | json}} {{ getTask$ | async | json}} {{ getTask$ | async | json}}
+```
+
+Para resolver, tera que utilizar o metodo pipe no service, e utilizar o shareReplay()
+
+```ts
+  public httpListTask$(): Observable<Tasks[]> {
+    return this._http.get<Tasks[]>(this.#apiURL()).pipe(
+      shareReplay()
+    )
+  }
+```
+
+> Pipe
+> O método pipe é a base para construir fluxos de dados complexos no RxJS. Ele recebe um observável como entrada e permite aplicar uma sequência de operadores a ele. Cada operador pode modificar os dados ou o comportamento do observável de alguma forma, produzindo um novo observável com as características desejadas.
+
+> shareReplay
+> O operador shareReplay é usado para criar um observável compartilhado. Isso significa que várias subscrições ao mesmo observável receberão as mesmas emissões de dados, mesmo que a requisição HTTP já tenha sido concluída no momento em que as subscrições posteriores são feitas.
+> Isso é útil para otimizar o desempenho em cenários onde os mesmos dados precisam ser acessados por várias partes da sua aplicação. Ao compartilhar o observável, você evita fazer requisições HTTP desnecessárias ao back-end para os mesmos dados.
+
+Reaproveitando o uso do subscribe, removendo "_apiService.httpListTask$()" e utilizando o getTask
+
+-No componente
+
+```ts
+  public getTask$ = this._apiService.httpListTask$()
+
+  ngOnInit(): void {
+    this.getTask$.subscribe({
+      next: (next) => {
+        console.log(next);
+        this.getTask.set(next);
+      },
+      error: (error) => console.log(error),
+      complete: () => console.log('complete!'),
+    });
+```
+- No Html
+
+```html
+@for (item of getTask$ | async; track $index) {
+<li>{{ item.id }} - {{ item.title }}</li>
+} @empty {
+<li>Carregando...</li>
+}
+```
+
+## Converter um Observable para um Signal
+
+

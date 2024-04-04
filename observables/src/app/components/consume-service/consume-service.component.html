@@ -1,1 +1,6 @@
-<p>consume-service works!</p>
+@for (item of getTask$ | async; track $index) {
+  <li>{{ item.id }} - {{ item.title }}</li>
+} @empty {
+  <li>Carregando...</li>
+}
+
